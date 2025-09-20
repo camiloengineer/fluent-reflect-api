@@ -7,6 +7,10 @@ API_KEY = os.getenv("JUDGE0_API_KEY")
 
 async def execute_code(language_id: int, source_code: str, stdin: str = ""):
     """Execute code using Judge0 API - replicates frontend logic"""
+    print(f"DEBUG - API_KEY: {API_KEY}")
+    if not API_KEY:
+        raise Exception("JUDGE0_API_KEY environment variable not set")
+
     headers = {
         "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com",
         "X-RapidAPI-Key": API_KEY,
@@ -42,6 +46,12 @@ async def execute_code(language_id: int, source_code: str, stdin: str = ""):
         submission_stderr = result.get("stderr")
         submission_compile_output = result.get("compile_output")
         submission_status = result.get("status", {}).get("description")
+
+        # Debug logging
+        print(f"DEBUG - stdout: {submission_stdout}")
+        print(f"DEBUG - stderr: {submission_stderr}")
+        print(f"DEBUG - compile_output: {submission_compile_output}")
+        print(f"DEBUG - status: {submission_status}")
 
         # Handle different output scenarios like frontend does
         if submission_compile_output:

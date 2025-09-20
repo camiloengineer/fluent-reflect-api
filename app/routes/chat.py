@@ -1,0 +1,46 @@
+from fastapi import APIRouter, HTTPException, Request
+from app.models.schemas import ChatRequest, ChatResponse
+from app.services.openai_service import chat_with_openai
+from app.utils.message_utils import trim_messages
+from app.utils.rate_limiter import check_rate_limit, cleanup_old_ips
+import random
+
+router = APIRouter()
+
+@router.post("/chat", response_model=ChatResponse)
+async def chat_endpoint(request: ChatRequest, client_request: Request):
+    """Chat endpoint using OpenAI GPT with FluentReflect system prompt"""
+    try:
+        # Get client IP for rate limiting
+        client_ip = client_request.client.host
+
+        # Apply rate limiting
+        check_rate_limit(client_ip)
+
+        # Periodically cleanup old IPs (10% chance per request)
+        if random.random() < 0.1:
+            cleanup_old_ips()
+
+        # Apply sliding window: keep only last 7 messages (+ system messages)
+        trimmed_messages = trim_messages(request.messages, limit=7)
+
+        # Call OpenAI with trimmed messages
+        response = await chat_with_openai(
+            messages=trimmed_messages,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens,
+            presence_penalty=request.presence_penalty,
+            frequency_penalty=request.frequency_penalty,
+            top_p=request.top_p
+        )
+
+        return ChatResponse(response=response)
+
+    except HTTPException:
+        # Re-raise HTTP exceptions (like rate limit)
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Chat failed: {str(e)}"
+        )
