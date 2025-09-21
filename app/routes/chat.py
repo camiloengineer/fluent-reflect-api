@@ -4,6 +4,7 @@ from app.services.openai_service import chat_with_openai
 from app.services.judge0_service import get_language_name
 from app.utils.message_utils import trim_messages
 from app.utils.rate_limiter import check_rate_limit, cleanup_old_ips
+from app.utils.exercise_name_detector import should_enable_generate_code_new_logic
 import random
 
 router = APIRouter()
@@ -32,6 +33,7 @@ async def chat_endpoint(request: ChatRequest, client_request: Request):
         response = await chat_with_openai(
             messages=trimmed_messages,
             language_name=language_name,
+            exercise_in_progress=request.generarCodigo,
             temperature=request.temperature,
             max_tokens=request.max_tokens,
             presence_penalty=request.presence_penalty,
@@ -39,7 +41,16 @@ async def chat_endpoint(request: ChatRequest, client_request: Request):
             top_p=request.top_p
         )
 
-        return ChatResponse(response=response)
+        # Use new logic to determine response flags
+        generar_codigo, nombre_ejercicio = should_enable_generate_code_new_logic(
+            response, request.generarCodigo
+        )
+
+        return ChatResponse(
+            response=response,
+            generarCodigo=generar_codigo,
+            nombreEjercicio=nombre_ejercicio
+        )
 
     except HTTPException:
         # Re-raise HTTP exceptions (like rate limit)

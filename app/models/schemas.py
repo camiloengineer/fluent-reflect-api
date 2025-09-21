@@ -22,6 +22,7 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     messages: List[ChatMessage]
     language_id: Optional[int] = 97  # Default to JavaScript (Node.js 20 LTS). Use same language_id as execute endpoint
+    generarCodigo: Optional[bool] = False  # false: should offer exercises, true: exercise in progress, don't offer more
     temperature: Optional[float] = 0.5
     max_tokens: Optional[int] = 400
     presence_penalty: Optional[float] = 0
@@ -30,6 +31,8 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     response: str
+    generarCodigo: bool = False  # false: no clear exercise, true: clear exercise being discussed
+    nombreEjercicio: Optional[str] = None  # name of exercise if one is being offered
 
 class ChallengeRequest(BaseModel):
     language: str = "javascript"

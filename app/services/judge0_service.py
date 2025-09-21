@@ -94,13 +94,29 @@ async def execute_code(language_id: int, source_code: str, stdin: str = ""):
         submit_response.raise_for_status()
         token = submit_response.json()["token"]
 
-        # 2. Get submission results
-        result_response = await client.get(
-            f"{JUDGE0_API}/submissions/{token}?base64_encoded=true",
-            headers=headers
-        )
-        result_response.raise_for_status()
-        result = result_response.json()
+        # 2. Poll for submission results until completion
+        import asyncio
+        max_attempts = 30  # Maximum polling attempts
+        delay = 1  # Delay between polls in seconds
+
+        for attempt in range(max_attempts):
+            result_response = await client.get(
+                f"{JUDGE0_API}/submissions/{token}?base64_encoded=true",
+                headers=headers
+            )
+            result_response.raise_for_status()
+            result = result_response.json()
+
+            status = result.get("status", {})
+            status_id = status.get("id")
+
+            # Status IDs: 1=In Queue, 2=Processing, 3=Accepted, 4=Wrong Answer, 5=Time Limit Exceeded, etc.
+            # We continue polling while status is 1 (In Queue) or 2 (Processing)
+            if status_id not in [1, 2]:
+                break
+
+            print(f"DEBUG - Polling attempt {attempt + 1}, status: {status.get('description')}")
+            await asyncio.sleep(delay)
 
         # 3. Process response (replicating frontend logic from Playground.jsx)
         submission_stdout = result.get("stdout")
