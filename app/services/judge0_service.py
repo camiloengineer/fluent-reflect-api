@@ -1,12 +1,73 @@
 import httpx
 import os
 from app.utils.decoder import decode_base64
+from dotenv import load_dotenv
+
+load_dotenv()
 
 JUDGE0_API = "https://judge0-ce.p.rapidapi.com"
-API_KEY = os.getenv("JUDGE0_API_KEY")
+
+async def get_languages():
+    """Get all active languages from Judge0 API"""
+    API_KEY = os.getenv("JUDGE0_API_KEY")
+    if not API_KEY:
+        raise Exception("JUDGE0_API_KEY environment variable not set")
+
+    headers = {
+        "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com",
+        "X-RapidAPI-Key": API_KEY,
+        "Content-Type": "application/json"
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{JUDGE0_API}/languages",
+            headers=headers
+        )
+        response.raise_for_status()
+        return response.json()
+
+# Curated language selection - one stable/LTS version per language
+SUPPORTED_LANGUAGES = {
+    97: {"name": "JavaScript", "display_name": "JavaScript (Node.js 20 LTS)"},
+    100: {"name": "Python", "display_name": "Python 3.12"},
+    103: {"name": "C", "display_name": "C (GCC 14.1)"},
+    105: {"name": "C++", "display_name": "C++ (GCC 14.1)"},
+    91: {"name": "Java", "display_name": "Java 17 LTS"},
+    107: {"name": "Go", "display_name": "Go 1.23"},
+    108: {"name": "Rust", "display_name": "Rust 1.85"},
+    98: {"name": "PHP", "display_name": "PHP 8.3"},
+    101: {"name": "TypeScript", "display_name": "TypeScript 5.6"},
+    111: {"name": "Kotlin", "display_name": "Kotlin 2.1"},
+    112: {"name": "Scala", "display_name": "Scala 3.4"},
+    72: {"name": "Ruby", "display_name": "Ruby 2.7"},
+    51: {"name": "C#", "display_name": "C# (Mono)"},
+    90: {"name": "Dart", "display_name": "Dart 2.19"},
+    83: {"name": "Swift", "display_name": "Swift 5.2"},
+    99: {"name": "R", "display_name": "R 4.4"},
+    82: {"name": "SQL", "display_name": "SQL (SQLite)"}
+}
+
+def get_language_name(language_id: int) -> str:
+    """Get the language name from language_id"""
+    if language_id in SUPPORTED_LANGUAGES:
+        return SUPPORTED_LANGUAGES[language_id]["name"]
+    return "JavaScript"  # Default fallback
+
+def get_supported_languages():
+    """Get list of curated languages for dropdown"""
+    return [
+        {
+            "id": lang_id,
+            "name": info["name"],
+            "display_name": info["display_name"]
+        }
+        for lang_id, info in SUPPORTED_LANGUAGES.items()
+    ]
 
 async def execute_code(language_id: int, source_code: str, stdin: str = ""):
     """Execute code using Judge0 API - replicates frontend logic"""
+    API_KEY = os.getenv("JUDGE0_API_KEY")
     print(f"DEBUG - API_KEY: {API_KEY}")
     if not API_KEY:
         raise Exception("JUDGE0_API_KEY environment variable not set")

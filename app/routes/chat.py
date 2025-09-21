@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 from app.models.schemas import ChatRequest, ChatResponse
 from app.services.openai_service import chat_with_openai
+from app.services.judge0_service import get_language_name
 from app.utils.message_utils import trim_messages
 from app.utils.rate_limiter import check_rate_limit, cleanup_old_ips
 import random
@@ -24,9 +25,13 @@ async def chat_endpoint(request: ChatRequest, client_request: Request):
         # Apply sliding window: keep only last 7 messages (+ system messages)
         trimmed_messages = trim_messages(request.messages, limit=7)
 
-        # Call OpenAI with trimmed messages
+        # Get language name from language_id
+        language_name = get_language_name(request.language_id)
+
+        # Call OpenAI with trimmed messages and language context
         response = await chat_with_openai(
             messages=trimmed_messages,
+            language_name=language_name,
             temperature=request.temperature,
             max_tokens=request.max_tokens,
             presence_penalty=request.presence_penalty,

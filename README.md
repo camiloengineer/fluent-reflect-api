@@ -1,6 +1,6 @@
 # Fluent Reflect API
 
-FastAPI backend for code execution using Judge0 API.
+FastAPI backend for code execution, AI chat, and challenge generation using Judge0 and OpenAI APIs.
 
 ## 🚀 Quick Start
 
@@ -13,9 +13,15 @@ pip install -r requirements.txt
 ```bash
 # Create .env file with:
 JUDGE0_API_KEY=your_judge0_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-3. **Run development server:**
+3. **Activate virtual environment (if using one):**
+```bash
+source venv/bin/activate
+```
+
+4. **Run development server:**
 ```bash
 uvicorn app.main:app --reload --port 8000
 ```
@@ -30,11 +36,19 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 | Variable | Required | Description | Example |
 |----------|----------|-------------|---------|
 | `JUDGE0_API_KEY` | ✅ Yes | RapidAPI key for Judge0 CE | `abc123def456...` |
+| `OPENAI_API_KEY` | ✅ Yes | OpenAI API key for chat and challenges | `sk-abc123def456...` |
 
-**How to get Judge0 API Key:**
+**How to get API Keys:**
+
+**Judge0 API Key:**
 1. Go to [RapidAPI Judge0 CE](https://rapidapi.com/judge0-official/api/judge0-ce/)
 2. Subscribe to the free plan
 3. Copy your API key from the dashboard
+
+**OpenAI API Key:**
+1. Go to [OpenAI API Keys](https://platform.openai.com/api-keys)
+2. Create a new API key
+3. Copy the key (starts with `sk-`)
 
 ## 🔗 API Endpoints
 
@@ -146,6 +160,104 @@ Content-Type: application/json
 - `memory` (integer|null): Memory used in KB
 - `exit_code` (integer|null): Program exit code
 
+### 4. Chat with AI
+```http
+POST /api/chat
+```
+
+**Request Headers:**
+```
+Content-Type: application/json
+```
+
+**Request Body (Required):**
+```json
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "Explain how recursion works in programming"
+    }
+  ],
+  "temperature": 0.5,
+  "max_tokens": 400,
+  "presence_penalty": 0,
+  "frequency_penalty": 0.2,
+  "top_p": 0.9
+}
+```
+
+**Request Schema:**
+- `messages` (array, required): Array of chat messages with role and content
+- `temperature` (float, optional): Response creativity (0.0-1.0, default: 0.5)
+- `max_tokens` (integer, optional): Maximum response length (default: 400)
+- `presence_penalty` (float, optional): Penalty for new topics (default: 0)
+- `frequency_penalty` (float, optional): Penalty for repetition (default: 0.2)
+- `top_p` (float, optional): Nucleus sampling parameter (default: 0.9)
+
+**Response - Success:**
+```json
+{
+  "response": "## Recursión en Programación\n\n**Recursión** es una técnica de programación donde una función se llama a sí misma para resolver un problema dividiéndolo en subproblemas más pequeños y similares.\n\n### Ejemplo básico:\n```javascript\nfunction factorial(n) {\n  if (n <= 1) return 1;\n  return n * factorial(n - 1);\n}\n```\n\n> **Tip:** Siempre define un caso base para evitar recursión infinita."
+}
+```
+
+**Note:** All chat responses are formatted in **Markdown** for easy frontend rendering with syntax highlighting and formatting.
+
+**Response - Rate Limited:**
+```json
+{
+  "detail": "Rate limit exceeded. Try again later."
+}
+```
+
+### 5. Generate Programming Challenge
+```http
+POST /api/generate-challenge
+```
+
+**Request Headers:**
+```
+Content-Type: application/json
+```
+
+**Request Body (Required):**
+```json
+{
+  "language": "javascript",
+  "difficulty": "easy",
+  "topic": "arrays",
+  "chat_context": [
+    {
+      "role": "user",
+      "content": "I want to practice array manipulation"
+    }
+  ]
+}
+```
+
+**Request Schema:**
+- `language` (string, optional): Programming language (default: "javascript")
+- `difficulty` (string, optional): Challenge difficulty: "easy", "medium", "hard" (default: "easy")
+- `topic` (string, optional): Programming topic (arrays, algorithms, strings, etc.)
+- `chat_context` (array, optional): Previous chat messages for context
+
+**Response - Success:**
+```json
+{
+  "challenge_id": "array_sum_easy_123",
+  "title": "Array Sum Calculator",
+  "description": "Create a function that takes an array of numbers and returns the sum of all elements.",
+  "template_code": "function calculateSum(numbers) {\n  // Your code here\n  return 0;\n}"
+}
+```
+
+**Response Schema:**
+- `challenge_id` (string): Unique identifier for the challenge
+- `title` (string): Challenge title
+- `description` (string): Detailed problem description
+- `template_code` (string): Starting template code for the challenge
+
 ## 🗂️ Supported Languages
 
 | Language | ID | Example |
@@ -195,6 +307,33 @@ curl -X POST "http://localhost:8000/api/execute" \
   }'
 ```
 
+### Chat Example
+```bash
+curl -X POST "http://localhost:8000/api/chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      {
+        "role": "user",
+        "content": "What is the time complexity of bubble sort?"
+      }
+    ],
+    "temperature": 0.7,
+    "max_tokens": 300
+  }'
+```
+
+### Challenge Generation Example
+```bash
+curl -X POST "http://localhost:8000/api/generate-challenge" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "language": "python",
+    "difficulty": "medium",
+    "topic": "algorithms"
+  }'
+```
+
 ## 📖 Swagger Documentation
 
 **Interactive API docs available at:**
@@ -204,7 +343,7 @@ curl -X POST "http://localhost:8000/api/execute" \
 
 ## 🔧 Frontend Integration
 
-**Example frontend call:**
+### Code Execution
 ```javascript
 const executeCode = async (languageId, sourceCode, stdin = "") => {
   const response = await fetch('http://localhost:8000/api/execute', {
@@ -225,6 +364,62 @@ const executeCode = async (languageId, sourceCode, stdin = "") => {
 // Usage
 const result = await executeCode(63, "console.log('Hello World!')", "");
 console.log(result.stdout); // "Hello World!"
+```
+
+### AI Chat
+```javascript
+const chatWithAI = async (messages, options = {}) => {
+  const response = await fetch('http://localhost:8000/api/chat', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messages: messages,
+      temperature: options.temperature || 0.5,
+      max_tokens: options.maxTokens || 400,
+      ...options
+    })
+  });
+
+  return await response.json();
+};
+
+// Usage
+const messages = [
+  { role: "user", content: "Explain async/await in JavaScript" }
+];
+const chatResult = await chatWithAI(messages);
+console.log(chatResult.response); // Returns Markdown formatted response
+
+// Frontend can then render the Markdown as HTML
+// Example with a Markdown library like 'marked':
+// const htmlContent = marked(chatResult.response);
+```
+
+### Challenge Generation
+```javascript
+const generateChallenge = async (language = "javascript", difficulty = "easy", topic = null) => {
+  const response = await fetch('http://localhost:8000/api/generate-challenge', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      language: language,
+      difficulty: difficulty,
+      topic: topic
+    })
+  });
+
+  return await response.json();
+};
+
+// Usage
+const challenge = await generateChallenge("python", "medium", "algorithms");
+console.log(challenge.title);
+console.log(challenge.description);
+console.log(challenge.template_code);
 ```
 
 ## 🐳 Docker (Optional)

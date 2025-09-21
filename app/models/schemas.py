@@ -21,6 +21,7 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: List[ChatMessage]
+    language_id: Optional[int] = 97  # Default to JavaScript (Node.js 20 LTS). Use same language_id as execute endpoint
     temperature: Optional[float] = 0.5
     max_tokens: Optional[int] = 400
     presence_penalty: Optional[float] = 0
@@ -41,3 +42,19 @@ class ChallengeResponse(BaseModel):
     title: str
     description: str
     template_code: str
+
+class Language(BaseModel):
+    id: int
+    name: str
+    is_archived: bool
+
+class LanguagesResponse(BaseModel):
+    languages: List[Language]
+
+class DropdownLanguage(BaseModel):
+    id: int
+    name: str
+    display_name: str  # For dropdown display (e.g., "JavaScript (Node.js 20 LTS)")
+
+class DropdownLanguagesResponse(BaseModel):
+    languages: List[DropdownLanguage]

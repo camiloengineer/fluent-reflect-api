@@ -2,10 +2,17 @@ import os
 import uuid
 from openai import OpenAI
 from typing import Optional
+from dotenv import load_dotenv
 
-client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY")
-)
+# Load environment variables
+load_dotenv()
+
+def get_openai_client():
+    """Get OpenAI client with proper error handling"""
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise Exception("OPENAI_API_KEY environment variable not set")
+    return OpenAI(api_key=api_key)
 
 CHALLENGE_GENERATION_PROMPT = """You are a programming challenge generator for technical interviews.
 
@@ -76,6 +83,7 @@ async def generate_challenge(
     )
 
     try:
+        client = get_openai_client()
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -128,12 +136,7 @@ def generate_javascript_template(challenge_data: dict) -> str:
     elif signature.endswith(" {}"):
         signature = signature[:-3]  # Remove " {}"
 
-    template = f'''/**
- * Problem: {challenge_data["title"]}
- *
- * {challenge_data["description"]}
- */
-{signature} {{
+    template = f'''{signature} {{
   // ✍️ TU CÓDIGO AQUÍ
 
 }}
@@ -158,12 +161,7 @@ def generate_python_template(challenge_data: dict) -> str:
         # Basic conversion from JS to Python signature
         signature = signature.replace("function ", "def ").replace(" {", ":").replace("}", "")
 
-    template = f'''"""
-Problem: {challenge_data["title"]}
-
-{challenge_data["description"]}
-"""
-{signature}
+    template = f'''{signature}
     # ✍️ TU CÓDIGO AQUÍ
     pass
 
@@ -186,6 +184,7 @@ async def analyze_chat_context(chat_context: list, language: str) -> str:
         chat_text += f"{role}: {content}\n"
 
     try:
+        client = get_openai_client()
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
