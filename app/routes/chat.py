@@ -29,27 +29,69 @@ async def chat_endpoint(request: ChatRequest, client_request: Request):
         # Get language name from language_id
         language_name = get_language_name(request.language_id)
 
-        # Call OpenAI with trimmed messages and language context
-        response = await chat_with_openai(
-            messages=trimmed_messages,
-            language_name=language_name,
-            exercise_in_progress=request.generarCodigo,
-            temperature=request.temperature,
-            max_tokens=request.max_tokens,
-            presence_penalty=request.presence_penalty,
-            frequency_penalty=request.frequency_penalty,
-            top_p=request.top_p
-        )
+        # Handle automatic prompts with special logic
+        if request.automatic:
+            from app.services.automatic_prompts_service import detect_automatic_prompt_type, should_override_exercise_logic
 
-        # Use new logic to determine response flags
-        generar_codigo, nombre_ejercicio = should_enable_generate_code_new_logic(
-            response, request.generarCodigo
-        )
+            # Get the user message content to detect prompt type
+            user_message_content = ""
+            if request.messages and request.messages[-1].role == "user":
+                user_message_content = request.messages[-1].content
+
+            prompt_type = detect_automatic_prompt_type(user_message_content, request.finished)
+
+            # Call OpenAI with automatic prompt handling
+            response = await chat_with_openai(
+                messages=trimmed_messages,
+                language_name=language_name,
+                exercise_in_progress=request.exercise_active,
+                temperature=request.temperature,
+                max_tokens=request.max_tokens,
+                presence_penalty=request.presence_penalty,
+                frequency_penalty=request.frequency_penalty,
+                top_p=request.top_p,
+                is_automatic=True,
+                current_code=request.current_code or "",
+                exercise_name=request.exercise_name or "",
+                execution_output=request.execution_output or "",
+                finished=request.finished
+            )
+
+            # Use automatic prompt logic for response flags
+            if prompt_type:
+                can_generate_exercise, exercise_name = should_override_exercise_logic(prompt_type)
+            else:
+                # Fallback to normal logic if prompt type not recognized
+                can_generate_exercise, exercise_name = should_enable_generate_code_new_logic(
+                    response, request.exercise_active
+                )
+        else:
+            # Normal chat processing
+            response = await chat_with_openai(
+                messages=trimmed_messages,
+                language_name=language_name,
+                exercise_in_progress=request.exercise_active,
+                temperature=request.temperature,
+                max_tokens=request.max_tokens,
+                presence_penalty=request.presence_penalty,
+                frequency_penalty=request.frequency_penalty,
+                top_p=request.top_p,
+                is_automatic=False,
+                current_code=request.current_code or "",
+                exercise_name=request.exercise_name or "",
+                execution_output=request.execution_output or "",
+                finished=request.finished
+            )
+
+            # Use normal logic to determine response flags
+            can_generate_exercise, exercise_name = should_enable_generate_code_new_logic(
+                response, request.exercise_active
+            )
 
         return ChatResponse(
             response=response,
-            generarCodigo=generar_codigo,
-            nombreEjercicio=nombre_ejercicio
+            can_generate_exercise=can_generate_exercise,
+            exercise_name=exercise_name
         )
 
     except HTTPException:

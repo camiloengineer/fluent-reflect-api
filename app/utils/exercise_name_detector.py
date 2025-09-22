@@ -22,10 +22,12 @@ def detect_concrete_exercise(response_text: str) -> Tuple[bool, Optional[str]]:
     concrete_exercises = {
         # Classic algorithms
         r"fizz\s*buzz": "FizzBuzz",
-        r"palíndromo|palindromo": "Palindromo",
+        r"palíndromo|palindromo|palindrome": "Palindrome",
         r"fibonacci": "Fibonacci",
         r"factorial": "Factorial",
-        r"números?\s+primos?|numeros?\s+primos?": "Números Primos",
+        r"números?\s+primos?|numeros?\s+primos?|prime\s+numbers?": "Prime Numbers",
+        r"reverse\s+string|invertir\s+cadena": "Reverse String",
+        r"find\s+maximum|encontrar\s+máximo|encontrar\s+maximo": "Find Maximum",
 
         # Data structures
         r"árbol\s+binario|arbol\s+binario": "Árbol Binario",
@@ -100,25 +102,29 @@ def detect_concrete_exercise(response_text: str) -> Tuple[bool, Optional[str]]:
 
 def should_enable_generate_code_new_logic(
     response_text: str,
-    request_generar_codigo: bool
+    request_exercise_active: bool
 ) -> Tuple[bool, Optional[str]]:
     """
-    New logic for determining generarCodigo flag and exercise name.
+    New logic for determining can_generate_exercise flag and exercise name.
+
+    LÓGICA:
+    - Si exercise_active=True (hay ejercicio activo): NUNCA permitir generar nuevo ejercicio
+    - Si exercise_active=False (no hay ejercicio activo): Verificar si se acordó un ejercicio específico
 
     Args:
         response_text: AI response text
-        request_generar_codigo: Current state from request
+        request_exercise_active: True if exercise is active, False if no active exercise
 
     Returns:
-        Tuple[bool, Optional[str]]: (generarCodigo_response, nombreEjercicio)
+        Tuple[bool, Optional[str]]: (can_generate_exercise, exercise_name)
     """
 
-    # If request has generarCodigo=True, always respond with False
+    # If request has exercise_active=True, never allow generating new exercise
     # (exercise in progress, don't offer more)
-    if request_generar_codigo:
+    if request_exercise_active:
         return False, None
 
-    # If request has generarCodigo=False, check if we're discussing a concrete exercise
+    # If request has exercise_active=False, check if we're discussing a concrete exercise
     is_concrete, exercise_name = detect_concrete_exercise(response_text)
 
     return is_concrete, exercise_name

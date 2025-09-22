@@ -50,7 +50,12 @@ async def chat_with_openai(
     max_tokens: int = 400,
     presence_penalty: float = 0,
     frequency_penalty: float = 0.2,
-    top_p: float = 0.9
+    top_p: float = 0.9,
+    is_automatic: bool = False,
+    current_code: str = "",
+    exercise_name: str = "",
+    execution_output: str = "",
+    finished: bool = False
 ) -> str:
     """Chat with OpenAI GPT using the FluentReflect system prompt"""
 
@@ -61,20 +66,50 @@ async def chat_with_openai(
     # Prepare messages for OpenAI API
     openai_messages = []
 
-    # Create language-specific system prompt
-    language_specific_prompt = f"{SYSTEM_PROMPT}\n\nIMPORTANTE: El usuario está trabajando con {language_name}. Todos los ejemplos de código, explicaciones y soluciones deben estar basados en {language_name}."
+    # Handle automatic prompts with special system prompts
+    if is_automatic:
+        from app.services.automatic_prompts_service import detect_automatic_prompt_type, get_automatic_system_prompt
 
-    # Add exercise state context
-    if exercise_in_progress:
-        language_specific_prompt += "\n\n🎯 ESTADO ACTUAL: Hay un ejercicio en curso. NO ofrezcas nuevos ejercicios. Enfócate en ayudar con el ejercicio actual: responder preguntas, dar pistas, revisar código, etc."
+        # Get the user message content to detect prompt type
+        user_message_content = ""
+        if messages and messages[-1].role == "user":
+            user_message_content = messages[-1].content
+
+        prompt_type = detect_automatic_prompt_type(user_message_content, finished)
+
+        if prompt_type:
+            # Use specialized system prompt for automatic prompts
+            system_prompt = get_automatic_system_prompt(prompt_type, language_name, current_code, exercise_name, execution_output)
+            openai_messages.append({
+                "role": "system",
+                "content": system_prompt
+            })
+        else:
+            # Fallback to normal system prompt if automatic prompt type not recognized
+            system_prompt = f"{SYSTEM_PROMPT}\n\nIMPORTANTE: El usuario está trabajando con {language_name}."
+            openai_messages.append({
+                "role": "system",
+                "content": system_prompt
+            })
     else:
-        language_specific_prompt += "\n\n🚀 ESTADO ACTUAL: No hay ejercicio activo. Tu objetivo es SIEMPRE proponer ejercicios concretos. Si el usuario pregunta sobre conceptos, sugiere inmediatamente un ejercicio relacionado."
+        # Normal system prompt for regular conversations
+        language_specific_prompt = f"{SYSTEM_PROMPT}\n\nIMPORTANTE: El usuario está trabajando con {language_name}. Todos los ejemplos de código, explicaciones y soluciones deben estar basados en {language_name}."
 
-    # Always add system prompt first
-    openai_messages.append({
-        "role": "system",
-        "content": language_specific_prompt
-    })
+        # Add current code context if available
+        if current_code and current_code.strip():
+            language_specific_prompt += f"\n\n📝 CÓDIGO ACTUAL EN EL EDITOR:\n```{language_name.lower()}\n{current_code}\n```\n\n🎯 INSTRUCCIONES IMPORTANTES:\n- SIEMPRE refiere a este código específico cuando el usuario pregunte\n- Analiza línea por línea lo que está implementado y lo que falta\n- Menciona elementos específicos del código (nombres de variables, funciones, comentarios)\n- Si hay comentarios como '// TU CÓDIGO AQUÍ', mencionalo directamente\n- Si hay test cases, analízalos y úsalos para explicar qué debería hacer la función"
+
+        # Add exercise state context
+        if exercise_in_progress:
+            language_specific_prompt += "\n\n🎯 ESTADO ACTUAL: Hay un ejercicio en curso. NO ofrezcas nuevos ejercicios. Enfócate en ayudar con el ejercicio actual: responder preguntas, dar pistas, revisar código, etc."
+        else:
+            language_specific_prompt += "\n\n🚀 ESTADO ACTUAL: No hay ejercicio activo. Tu objetivo es SIEMPRE proponer ejercicios concretos. Si el usuario pregunta sobre conceptos, sugiere inmediatamente un ejercicio relacionado."
+
+        # Add system prompt
+        openai_messages.append({
+            "role": "system",
+            "content": language_specific_prompt
+        })
 
     # Add user messages
     for message in messages:
