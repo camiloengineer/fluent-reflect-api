@@ -1,0 +1,31 @@
+# Ignore Python caches
+__pycache__
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Git
+.git
+.gitignore
+
+# Virtual envs
+venv
+.env.local
+.env.*.local
+
+# Byte-compiled / optimized / DLL files
+*.pyc
+
+# Tests (exclude if you don't need them inside image)
+/tests
+*.pytest_cache
+.pytest_cache
+
+# Others
+.DS_Store
+.idea
+.vscode
+
+# Node frontend backup folder if not required in backend image
+backup

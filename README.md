@@ -52,6 +52,14 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 ## 🔗 API Endpoints
 
+### Production Base URL
+
+```
+https://fluent-reflect-api-581268440769.us-central1.run.app
+```
+
+> Nota: El servicio Cloud Run está configurado como PÚBLICO (`--allow-unauthenticated`) y tiene CORS habilitado para el frontend en producción.
+
 ### Base URL
 ```
 http://localhost:8000
@@ -343,10 +351,27 @@ curl -X POST "http://localhost:8000/api/generate-challenge" \
 
 ## 🔧 Frontend Integration
 
+### API Base URL (Producción)
+
+El backend está desplegado como servicio público en Cloud Run con CORS configurado. El frontend debe usar:
+
+```javascript
+const API_BASE_URL = "https://fluent-reflect-api-581268440769.us-central1.run.app";
+```
+
+### CORS Configuration
+
+El backend tiene CORS configurado para permitir requests desde:
+- `https://fluent-reflect-app.web.app` (Firebase Hosting)
+- `https://fluent-reflect-front-d5vnsr2t6q-uc.a.run.app` (Cloud Run Frontend)
+- `http://localhost:3000` y `http://localhost:5173` (desarrollo local)
+
 ### Code Execution
 ```javascript
+const API_BASE_URL = "https://fluent-reflect-api-581268440769.us-central1.run.app";
+
 const executeCode = async (languageId, sourceCode, stdin = "") => {
-  const response = await fetch('http://localhost:8000/api/execute', {
+  const response = await fetch(`${API_BASE_URL}/api/execute`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -369,7 +394,7 @@ console.log(result.stdout); // "Hello World!"
 ### AI Chat
 ```javascript
 const chatWithAI = async (messages, options = {}) => {
-  const response = await fetch('http://localhost:8000/api/chat', {
+  const response = await fetch(`${API_BASE_URL}/api/chat`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -400,7 +425,7 @@ console.log(chatResult.response); // Returns Markdown formatted response
 ### Challenge Generation
 ```javascript
 const generateChallenge = async (language = "javascript", difficulty = "easy", topic = null) => {
-  const response = await fetch('http://localhost:8000/api/generate-challenge', {
+  const response = await fetch(`${API_BASE_URL}/api/generate-challenge`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -439,3 +464,121 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 docker build -t fluent-reflect-api .
 docker run -p 8000:8000 --env-file .env fluent-reflect-api
 ```
+
+---
+
+## 🔐 Secret Management (Producción)
+
+En producción las claves NO viven en `.env` ni dentro de la imagen. Se inyectan desde **Secret Manager** al desplegar Cloud Run.
+
+### Secretos actuales
+| Nombre Secret Manager | Variable de Entorno | Uso |
+|-----------------------|---------------------|-----|
+| `OPENAI_API_KEY`      | `OPENAI_API_KEY`    | OpenAI Chat / Challenge |
+| `JUDGE0_API_KEY`      | `JUDGE0_API_KEY`    | Judge0 Code Execution |
+
+### Rotación rápida (script automatizado)
+```bash
+./scripts/quick_prod_update.sh "NUEVA_OPENAI_KEY" "NUEVA_JUDGE0_KEY"
+```
+Este script automatiza todo el proceso de rotación de claves:
+1. ✅ Crea service account dedicado (`fluent-reflect-runtime`) si no existe
+2. ✅ Crea los secretos en Secret Manager si faltan
+3. ✅ Añade nueva versión de cada secreto (rotación sin downtime)
+4. ✅ Concede permisos `secretAccessor` al service account runtime
+5. ✅ Actualiza servicio Cloud Run con nuevos secretos
+6. ✅ Hace health check para verificar funcionamiento
+
+### Setup inicial de secretos
+```bash
+./scripts/setup_secrets.sh fr-prod-470013 "OPENAI_KEY" "JUDGE0_KEY"
+```
+Script más básico que solo gestiona secretos sin deployment.
+
+### Cargar secretos localmente (solo para desarrollo):
+```bash
+export OPENAI_API_KEY="$(gcloud secrets versions access latest --secret=OPENAI_API_KEY --project fr-prod-470013)"
+export JUDGE0_API_KEY="$(gcloud secrets versions access latest --secret=JUDGE0_API_KEY --project fr-prod-470013)"
+```
+
+### Nunca hacer:
+- Comitear claves reales en `.env`.
+- Pegar las claves en issues / PR / README.
+
+---
+
+## ☁️ Cloud Run Deployment (Pipeline)
+
+El despliegue se realiza con **Cloud Build** usando `cloudbuild.yaml` que:
+1. Construye la imagen y la sube a Artifact Registry.
+2. Ejecuta `gcloud run deploy` con `--set-secrets`.
+3. Usa service account dedicado: `fluent-reflect-runtime`.
+
+Despliegue manual (si necesitas forzar sin build):
+```bash
+gcloud run services update fluent-reflect-api \
+  --project fr-prod-470013 \
+  --region us-central1 \
+  --service-account fluent-reflect-runtime@fr-prod-470013.iam.gserviceaccount.com \
+  --set-secrets OPENAI_API_KEY=OPENAI_API_KEY:latest,JUDGE0_API_KEY=JUDGE0_API_KEY:latest
+```
+
+### Health check público
+```bash
+curl -i https://fluent-reflect-api-581268440769.us-central1.run.app/health
+```
+
+---
+
+## 🛡️ IAM & Seguridad
+
+Roles clave mínimos (sujeto a endurecimiento posterior):
+| Principal | Rol principal |
+|-----------|--------------|
+| Cloud Build SA | Artifact Registry (writer), Cloud Run deploy |
+| Runtime SA (`fluent-reflect-runtime`) | Secret Manager accessor, Logging writer |
+| Usuario humano | `iam.serviceAccountUser` sobre runtime SA |
+
+Para auditoría de env vars inyectadas:
+```bash
+gcloud run services describe fluent-reflect-api \
+  --project fr-prod-470013 --region us-central1 \
+  --format='yaml(spec.template.spec.containers[0].env)'
+```
+
+---
+
+## 🧪 Troubleshooting Rápido
+
+| Síntoma | Causa Probable | Acción |
+|---------|----------------|--------|
+| 403 a `/health` sin token | Servicio privado | Añadir header con identity token |
+| Error missing API key | Secret no inyectado | Revisar `--set-secrets` y roles secretAccessor |
+| Port not ready | CMD sin expansión de `$PORT` | Usar shell form en Docker (`/bin/sh -c ...`) |
+| Artifact Registry DENIED | IAM incompleto en `gcf-artifacts` | Añadir roles reader/writer a SAs |
+
+Logs en tiempo real:
+```bash
+gcloud logs tail --project fr-prod-470013 --region us-central1 --service fluent-reflect-api
+```
+
+---
+
+## 🗺️ Roadmap / Next Steps (Opcional)
+| Feature | Estado | Notas |
+|---------|--------|-------|
+| Tests unitarios básicos | Pendiente | Añadir para servicios judge0/openai |
+| API Gateway / auth central | Evaluar | Si crece número de consumidores |
+| Rate limiting granular | Parcial | Mejorar por IP / user token |
+| Hardening IAM | En curso | Reducir roles amplios tras estabilizar |
+
+---
+
+## ✅ Estado Actual Producción
+| Item | Estado |
+|------|--------|
+| Despliegue Cloud Run | OK |
+| Secrets (Secret Manager) | OK, rotación via script |
+| Service Account dedicado | OK (`fluent-reflect-runtime`) |
+| Acceso público | Restringido (privado con identity token) |
+| CORS | Restringido a origen frontend configurado |
