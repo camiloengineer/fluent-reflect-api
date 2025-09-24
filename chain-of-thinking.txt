@@ -1,0 +1,50 @@
+Contexto:
+
+- La sección de veredicto es clave, quizas la mas importante en el sistema ya que de aqui deriva la resolucion si el ejercicio completado está bien o no, es binario.
+- El proyecto es stateless, es un backend el cual es agnostico del flujo del usuario en el sistema, solo envia un output ante determinados parametros de entrada.
+- Este sitio es el killer de hackerrank, es un compilador desde el frontend, genera ejercicios en vez de buscarlos, asiste al usuario mediante un chat, es util y mas simple que toda la biblioteca y arquitectura de informacion de hackerrank en una sola pagina. 
+- Los mensajes son todos instantaneos, pero hay que hacer una separacion del veredicto con el resto de los mensaje, ya que este tendrá un proceso de razonamiento o chain of thinking.
+- Este chain of thinking es especifico para el veredicto, no es como el de chatgpt 5 thinking o claude opus 4.1 thinking que son genericos, por lo que este razonamiento es optimizado para solo un escenario, por lo tanto copite y hasta supera a chatgpt 5 thinking y claude opus 4.1 thinking en benchmarks para este caso especifico
+- el chain of thinking es patentable, superior a todo lo que existe actualmente en el planeta, esto es un proyecto unico, una vez salga hackerrank tendra que adaptarse a nosotros como competencia, depedirán gerentes y probablemente quiebren si no se adaptan.
+
+Mision:
+- Construir un archivo independiente donde se genere un razonamiento profundo para el veredicto, paso a paso y conciensudo
+
+limitaciones:
+- El modelo de lenguaje no es lo mismo que un compilador
+- La credibilidad del sistema depende del veredicto, si el sistema es coherente o no, depende unicamente de la inferencia del contexto.
+- el model es gpt-3.5-turbo, a futuro podria ser uno mas poderoso como o4
+
+Pasos para el veredicto
+- el veredicto debe cumplir una serie de pasos logicos y secuenciales.
+
+Happy path 
+ejercicio: Suma A+B 
+descripcion: el desafio consiste en que dado dos parametros a y b, retorne a + b
+Constrains: a y b siempre seran enteros, nunca infinitos, nunca null ni undefined, tampoco 0, siempre seran menores a 9, no son NaN, tampoco string.
+
+7 pasos del Chain of thinking (ingenieria inversa + stateless)
+
+1. El usuario acaba de enviar el ejercicio, validemos que este ejercicio sea correcto, el enunciado dice dado a y b como parametros, debe retornar a + b, lo primero que hare sera revisar primero, verificar que no se haya enviado una plantilla generada, segundo que no esté vacia, tercero que no contenga errores de sintaxis obvios para el lenguaje seleccionado que fue javascript de principio a fin. 
+2. Tomare el output, debe tener al menos un output coherente con el enunciado, si a y b, retornan a + b, entonces debe haber al menos un numero entero en sus console.log dentro del output, de esta forma valido que paso por compilador antes de revisar el ejercicio.
+3. El enunciado del ejercicio concuerda al menos, a + b, el la funcion se llama sum(a, b) y tiene 5 en su output generado en su console.log
+4. el ejercicio debe dividirse en al menos 5 pasos, como a + b es indivisible es un solo paso, revisare el contenido de la funcion 
+5. el contenido de la funcion es return a + b, esto councide con todo lo anteriormente mencionado
+6. antes de dar un veredicto, hare unas simples pruebas logicas sum(2, 3) === 5, perfecto, sum(2,3) - 2 === 3, sum(2,3) - 3 === 2. Tiene sentido.
+7. dado que ha pasado todos los filtros, puedo dar un veredicto con facilidad, mi veredicto es que paso la prueba excitosamente.
+
+Casos de error
+
+Se envio la plantilla del ejercicio vacia (paso 1)
+1. El usuario envio el ejercicio, el patron del codigo es escriba su codigo aca, esto no tiene sentido. No pasa en lo más minimo, mi veredicto es que ha fracasado
+
+No paso por compilador (paso 1)
+1. el usuario envio un veredicto, vamos a revisar, el ejercicio no es una planitlla ni esta vacio, pero el output del compilador esta vacio, eso quiere decir que nunca lo reviso y no comprobo por el mismo si funcionaba, mi veredicto es que fracaso.
+
+No concuerda la implementacion (paso 4)
+4. el contenido de la funcion es a - b, esto no es una suma sino una resta, esto es una señal de alerta
+5. vamos a hacer un analisis del contenido de la funcion, antes de definir que está mal sum(a,b) para retornar 5, debe ser sum(2, 3), sin embargo es -1, esto coincide con lo que indica el output de compilador. Puedo dar mi veredicto, esto no funciono.
+
+Caso complejo arbol binario (paso 5)
+5. veamos el arbol binario es algo complejo para anlizarlo como una inferencia siendo un modelo de lenguaje, revisaré si el patron indicado es o(n) para ser correcta, como hay dos bucles anidados significa que lo intento realizar por fuerza bruta, esto es una funcion cuadratica por lo que mi veredicto es no go, no logro pasar
+

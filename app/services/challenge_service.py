@@ -30,6 +30,9 @@ You must respond EXACTLY in this JSON format (no markdown, no extra explanations
   "description": "Clear problem description in Spanish. Explain what the function should do.",
   "function_name": "functionName",
   "function_signature": "function functionName(param1, param2)",
+  "constraints": [
+    "Cada restricción breve y concreta en español"
+  ],
   "test_cases": [
     {{"input": "example parameters", "expected": "expected result", "explanation": "Why this result"}},
     {{"input": "example parameters 2", "expected": "expected result 2", "explanation": "Why this result"}}
@@ -127,6 +130,10 @@ def generate_javascript_template(challenge_data: dict) -> str:
     """Generate JavaScript template with function signature and test cases"""
 
     function_name = challenge_data.get("function_name", "solution")
+    title = challenge_data.get("title", function_name)
+    description_raw = challenge_data.get("description", "Completa la función solicitada.")
+    description = " ".join(description_raw.splitlines()).strip()
+    constraints = [c.strip() for c in challenge_data.get("constraints", []) if c.strip()]
     test_cases = challenge_data.get("test_cases", [])
 
     # Clean up function signature if it has extra braces
@@ -136,23 +143,60 @@ def generate_javascript_template(challenge_data: dict) -> str:
     elif signature.endswith(" {}"):
         signature = signature[:-3]  # Remove " {}"
 
-    template = f'''{signature} {{
-  // ✍️ TU CÓDIGO AQUÍ
+    template_lines = [
+        f"// 🧪 Ejercicio: {title}",
+        f"// 📋 Descripción: {description}",
+        "",
+        f"{signature} {{",
+        "  // ✍️ TU CÓDIGO AQUÍ",
+        "",
+        "}",
+        "",
+        "// 📥 Ejemplos de Entrada/Salida:",
+    ]
 
-}}
+    if test_cases:
+        for test_case in test_cases:
+            sample_input = test_case.get("input", "")
+            expected = test_case.get("expected", "")
+            template_lines.append(f"// Entrada: {sample_input}  →  Salida esperada: {expected}")
+    else:
+        template_lines.append("// - (Agrega un ejemplo de entrada/salida)")
 
-// Test Cases (ejecutables)'''
+    template_lines.append("")
+    template_lines.append("// 🛑 Restricciones:")
 
-    for i, test_case in enumerate(test_cases):
-        template += f'''
-console.log({function_name}({test_case["input"]})); // Esperado: {test_case["expected"]}'''
+    if constraints:
+        for constraint in constraints:
+            template_lines.append(f"// - {constraint}")
+    else:
+        template_lines.append("// - (Proporciona restricciones claras para validar el ejercicio)")
 
-    return template
+    template_lines.append("")
+    template_lines.append("// Test Cases (ejecutables)")
+
+    if test_cases:
+        for test_case in test_cases:
+            sample_input = test_case.get("input", "")
+            expected = test_case.get("expected", "")
+            template_lines.append(
+                f"console.log({function_name}({sample_input})); // Esperado: {expected}"
+            )
+    else:
+        template_lines.append(
+            "// console.log(funcionEjemplo(args)); // Esperado: resultado"
+        )
+
+    return "\n".join(template_lines)
 
 def generate_python_template(challenge_data: dict) -> str:
     """Generate Python template with function signature and test cases"""
 
     function_name = challenge_data.get("function_name", "solution")
+    title = challenge_data.get("title", function_name)
+    description_raw = challenge_data.get("description", "Completa la función solicitada.")
+    description = " ".join(description_raw.splitlines()).strip()
+    constraints = [c.strip() for c in challenge_data.get("constraints", []) if c.strip()]
     test_cases = challenge_data.get("test_cases", [])
 
     # Convert JS signature to Python if needed
@@ -161,17 +205,50 @@ def generate_python_template(challenge_data: dict) -> str:
         # Basic conversion from JS to Python signature
         signature = signature.replace("function ", "def ").replace(" {", ":").replace("}", "")
 
-    template = f'''{signature}
-    # ✍️ TU CÓDIGO AQUÍ
-    pass
+    template_lines = [
+        f"# 🧪 Ejercicio: {title}",
+        f"# 📋 Descripción: {description}",
+        "",
+        f"{signature}",
+        "    # ✍️ TU CÓDIGO AQUÍ",
+        "    pass",
+        "",
+        "# 📥 Ejemplos de Entrada/Salida:",
+    ]
 
-# Test Cases (ejecutables)'''
+    if test_cases:
+        for test_case in test_cases:
+            sample_input = test_case.get("input", "")
+            expected = test_case.get("expected", "")
+            template_lines.append(f"# Entrada: {sample_input}  →  Salida esperada: {expected}")
+    else:
+        template_lines.append("# - (Agrega un ejemplo de entrada/salida)")
 
-    for i, test_case in enumerate(test_cases):
-        template += f'''
-print({function_name}({test_case["input"]}))  # Esperado: {test_case["expected"]}'''
+    template_lines.append("")
+    template_lines.append("# 🛑 Restricciones:")
 
-    return template
+    if constraints:
+        for constraint in constraints:
+            template_lines.append(f"# - {constraint}")
+    else:
+        template_lines.append("# - (Proporciona restricciones claras para validar el ejercicio)")
+
+    template_lines.append("")
+    template_lines.append("# Test Cases (ejecutables)")
+
+    if test_cases:
+        for test_case in test_cases:
+            sample_input = test_case.get("input", "")
+            expected = test_case.get("expected", "")
+            template_lines.append(
+                f"print({function_name}({sample_input}))  # Esperado: {expected}"
+            )
+    else:
+        template_lines.append(
+            "# print(funcion_ejemplo(args))  # Esperado: resultado"
+        )
+
+    return "\n".join(template_lines)
 
 async def analyze_chat_context(chat_context: list, language: str) -> str:
     """Analyze chat context to understand what challenge was discussed"""

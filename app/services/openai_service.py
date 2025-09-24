@@ -59,6 +59,9 @@ async def chat_with_openai(
 ) -> str:
     """Chat with OpenAI GPT using the FluentReflect system prompt"""
 
+    if finished and not is_automatic:
+        raise ValueError("Finished verdict flow must be requested as an automatic prompt")
+
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise Exception("OPENAI_API_KEY environment variable not set")
@@ -84,6 +87,22 @@ async def chat_with_openai(
                 "role": "system",
                 "content": system_prompt
             })
+
+            # Inject deliberate reasoning flow for verdicts
+            if prompt_type == "EXERCISE_VERDICT":
+                from app.services.verdict_chain import build_verdict_reasoning_prompt
+
+                reasoning_prompt = build_verdict_reasoning_prompt(
+                    language_name=language_name,
+                    exercise_name=exercise_name,
+                    current_code=current_code,
+                    execution_output=execution_output,
+                )
+
+                openai_messages.append({
+                    "role": "system",
+                    "content": reasoning_prompt
+                })
         else:
             # Fallback to normal system prompt if automatic prompt type not recognized
             system_prompt = f"{SYSTEM_PROMPT}\n\nIMPORTANTE: El usuario está trabajando con {language_name}."

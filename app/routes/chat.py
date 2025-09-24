@@ -29,6 +29,12 @@ async def chat_endpoint(request: ChatRequest, client_request: Request):
         # Get language name from language_id
         language_name = get_language_name(request.language_id)
 
+        if request.finished and not request.automatic:
+            raise HTTPException(
+                status_code=400,
+                detail="finished=True requiere automatic=True para activar el veredicto"
+            )
+
         # Handle automatic prompts with special logic
         if request.automatic:
             from app.services.automatic_prompts_service import detect_automatic_prompt_type, should_override_exercise_logic
@@ -102,3 +108,4 @@ async def chat_endpoint(request: ChatRequest, client_request: Request):
             status_code=500,
             detail=f"Chat failed: {str(e)}"
         )
+
