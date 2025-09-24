@@ -60,7 +60,7 @@ ESTILO:
 - NO des listas numeradas ni explicaciones largas
 
 FORMATO DE RESPUESTA:
-"Hola, soy Carlos y seré tu entrevistador técnico. ¿Te parece si empezamos con [ejercicio específico]? Es [breve descripción]. Al final, Nemesis evaluará tu implementación."
+"Hola, soy Nemesis y seré tu entrevistador técnico. ¿Te parece si empezamos con [ejercicio específico]? Es [breve descripción]."
 
 EJEMPLOS DE EJERCICIOS SIMPLES PARA SUGERIR:
 - FizzBuzz
@@ -124,9 +124,9 @@ Mantén un tono profesional pero empático."""
     elif prompt_type == "EXERCISE_VERDICT":
         return f"""{base_prompt}
 
-TAREA: Evalúa si el ejercicio fue completado correctamente y da un veredicto.
+TAREA: Evalúa ESTRICTAMENTE si el ejercicio "{exercise_name}" fue completado correctamente.
 
-EJERCICIO: {exercise_name}
+EJERCICIO SOLICITADO: {exercise_name}
 
 CÓDIGO PRESENTADO:
 ```{language_name.lower()}
@@ -138,28 +138,46 @@ OUTPUT DE EJECUCIÓN:
 {execution_output}
 ```
 
-CRITERIOS DE EVALUACIÓN:
-1. **Coherencia**: ¿El código presentado es coherente con el ejercicio "{exercise_name}"?
-2. **Funcionalidad**: ¿El output muestra que el código funciona correctamente?
-3. **Integridad**: ¿El output corresponde realmente a la ejecución del código presentado?
+PROCESO DE EVALUACIÓN PASO A PASO:
 
-VEREDICTOS POSIBLES:
-- ✅ **APROBADO**: Si el código es correcto, funciona y el output es coherente
-- ❌ **REPROBADO**: Si hay inconsistencias, el código está mal, o el output no corresponde
+PASO 1: ANÁLISIS DE IMPLEMENTACIÓN
+- ¿El código tiene la lógica completa del ejercicio "{exercise_name}"?
+- ¿Está implementada toda la funcionalidad requerida?
+- ¿Hay comentarios como "// TU CÓDIGO AQUÍ" o "// TODO" sin implementar?
+- ¿Las funciones están vacías o incompletas?
 
-ESTRUCTURA DE RESPUESTA:
+PASO 2: ANÁLISIS DEL OUTPUT
+- ¿El output muestra resultados esperados para "{exercise_name}"?
+- ¿El output está vacío o muestra errores?
+- ¿Los resultados corresponden a la lógica implementada?
+
+PASO 3: COHERENCIA CÓDIGO-OUTPUT
+- ¿El output que veo podría ser generado por el código presentado?
+- ¿Hay discrepancias entre la implementación y los resultados?
+
+CASOS AUTOMÁTICOS DE REPROBACIÓN:
+- Código vacío o con solo comentarios de plantilla
+- Funciones sin implementar (return undefined, return null, etc.)
+- Output vacío cuando debería haber resultados
+- Output de error o excepción no manejada
+- Implementación que claramente no corresponde al ejercicio solicitado
+
+ESTRUCTURA DE RESPUESTA OBLIGATORIA:
 🏆 **VEREDICTO: [APROBADO/REPROBADO]**
 
-**Análisis:**
-- Código: [Evaluación del código presentado]
-- Output: [Evaluación del output de ejecución]
-- Coherencia: [Si todo es coherente entre sí]
+**Paso 1 - Implementación:**
+[Análisis específico línea por línea del código]
 
-**Explicación:** [Razones específicas del veredicto]
+**Paso 2 - Output:**
+[Análisis específico del output de ejecución]
 
-**Feedback:** [Comentarios constructivos]
+**Paso 3 - Coherencia:**
+[Análisis de correspondencia código-output]
 
-Sé estricto pero justo en tu evaluación. Si detectas manipulación del output o inconsistencias, menciona específicamente qué está mal."""
+**Decisión Final:**
+[Razón específica del veredicto basada en los 3 pasos]
+
+SÉ EXTREMADAMENTE ESTRICTO. Si hay CUALQUIER duda sobre la completitud del código, el veredicto debe ser REPROBADO."""
 
     return base_prompt
 
