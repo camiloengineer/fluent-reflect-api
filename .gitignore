@@ -22,8 +22,21 @@ wheels/
 .installed.cfg
 *.egg
 
+# Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+
 # Environment variables
 .env
-.venv
-env/
-venv/.env
+.env.*
+
+# Logs
+*.log
+backend.log
+
+# Cache
+.cache/
+.pytest_cache/
+*.pyc

@@ -1,4 +1,4 @@
-#!/home/camilogonzalez/Escritorio/Projects/experiments/fluent-reflect-api/venv/bin/python3
+#!/Users/camilogo/Desktop/projects/fluent-reflect-api/venv/bin/python3.13
 # -*- coding: utf-8 -*-
 # Copyright 2025 Google LLC
 #

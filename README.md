@@ -31,6 +31,58 @@ uvicorn app.main:app --reload --port 8000
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
+## Instrucciones para levantar el backend
+
+Hay dos formas de levantar el backend:
+
+### 1. Desarrollo (Primer plano)
+
+1. Crea y activa un entorno virtual:
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+2. Instala las dependencias:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Ejecuta el servidor en modo desarrollo:
+   ```bash
+   uvicorn app.main:app --reload --port 8000
+   ```
+
+### 2. Producción (Como agente en segundo plano)
+
+1. Crea y activa un entorno virtual:
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+2. Instala las dependencias:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Inicia el servidor como agente:
+   ```bash
+   nohup ./venv/bin/uvicorn app.main:app --reload --port 8000 > backend.log 2>&1 &
+   ```
+
+Este último comando:
+- Inicia el servidor usando uvicorn en el entorno virtual
+- Lo ejecuta en segundo plano (daemon)
+- Habilita recarga automática al detectar cambios
+- Escucha en el puerto 8000
+- Registra la salida en backend.log
+
+Para detener el servidor:
+```bash
+pkill uvicorn
+```
+
 ## 📋 Required Secrets/Environment Variables
 
 | Variable | Required | Description | Example |
