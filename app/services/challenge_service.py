@@ -4,6 +4,8 @@ from openai import OpenAI
 from typing import Optional
 from dotenv import load_dotenv
 
+from app.utils.snapshot_validator import encode_exercise_description_for_response
+
 # Load environment variables
 load_dotenv()
 
@@ -110,7 +112,10 @@ async def generate_challenge(
             "challenge_id": str(uuid.uuid4()),
             "title": challenge_data["title"],
             "description": challenge_data["description"],
-            "template_code": template_code
+            "template_code": template_code,
+            "exercise_description": encode_exercise_description_for_response(
+                challenge_data.get("description", "")
+            )
         }
 
     except Exception as e:

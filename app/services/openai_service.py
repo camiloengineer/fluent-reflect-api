@@ -165,12 +165,20 @@ async def chat_with_openai(
         # Remove trailing newlines
         input_content = input_content.strip()
 
+        # Select reasoning effort with optional env override for verdict-only escalation
+        reasoning_effort = "minimal"
+        if is_automatic:
+            # Best-effort detection: if the system prompt includes our verdict chain header, allow override
+            env_override = os.getenv("VERDICT_REASONING_EFFORT", "").strip().lower()
+            if env_override in {"minimal", "low"}:
+                reasoning_effort = env_override
+
         payload = {
             "model": "gpt-5-mini",
             "input": input_content,
-            "max_output_tokens": max(max_tokens, 200),  # Ensure minimum tokens for response
+            "max_output_tokens": max(max_tokens, 300),  # Ensure minimum tokens for response (benchmark-backed)
             "truncation": "auto",
-            "reasoning": {"effort": "minimal"}  # Minimal reasoning for faster responses
+            "reasoning": {"effort": reasoning_effort}  # Minimal by default; allow low via env for verdicts
         }
 
         response = requests.post(

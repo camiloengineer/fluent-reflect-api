@@ -59,6 +59,7 @@ class ChallengeResponse(CamelCaseModel):
     title: str = Field(alias="title")
     description: str = Field(alias="description")
     template_code: str = Field(alias="templateCode")
+    exercise_description: str = Field(alias="exerciseDescription")
 
 class Language(CamelCaseModel):
     id: int = Field(alias="id")
