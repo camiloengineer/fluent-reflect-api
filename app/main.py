@@ -15,13 +15,7 @@ app = FastAPI(
 
 # CORS middleware for frontend integration
 ALLOWED_ORIGINS = [
-    "https://fluent-reflect-app.web.app",
-    "https://fluent-reflect-front-d5vnsr2t6q-uc.a.run.app",  # Frontend production (old)
-    "https://fluent-reflect-front-581268440769.us-central1.run.app",  # Frontend production (current)
-    "http://localhost:3000",  # React dev server
-    "http://localhost:5173",  # Vite dev server
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:5173",
+    "https://fluent-reflect-front-d5vnsr2t6q-uc.a.run.app",  # Frontend production
 ]
 
 app.add_middleware(

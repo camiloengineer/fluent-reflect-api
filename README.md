@@ -4,31 +4,32 @@ FastAPI backend for code execution, AI chat, and challenge generation using Judg
 
 ## 🚀 Quick Start
 
-1. **Install dependencies:**
+1. **Create and activate virtual environment:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+2. **Install dependencies:**
 ```bash
 pip install -r requirements.txt
 ```
 
-2. **Configure environment variables:**
+3. **Configure environment variables:**
 ```bash
 # Create .env file with:
 JUDGE0_API_KEY=your_judge0_api_key_here
 OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-3. **Activate virtual environment (if using one):**
-```bash
-source venv/bin/activate
-```
-
 4. **Run development server:**
 ```bash
-uvicorn app.main:app --reload --port 8000
+./venv/bin/python -m uvicorn app.main:app --reload --port 8000
 ```
 
-4. **Run production server:**
+5. **Run production server:**
 ```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+./venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
 ## Instrucciones para levantar el backend
@@ -464,10 +465,11 @@ const API_BASE_URL = "https://fluent-reflect-api-581268440769.us-central1.run.ap
 
 ### CORS Configuration
 
-El backend tiene CORS configurado para permitir requests desde:
-- `https://fluent-reflect-app.web.app` (Firebase Hosting)
-- `https://fluent-reflect-front-d5vnsr2t6q-uc.a.run.app` (Cloud Run Frontend)
-- `http://localhost:3000` y `http://localhost:5173` (desarrollo local)
+El backend tiene CORS configurado para permitir requests únicamente desde:
+- `https://fluent-reflect-front-d5vnsr2t6q-uc.a.run.app` (Frontend Cloud Run)
+
+### Frontend URL
+**Producción:** `https://fluent-reflect-front-d5vnsr2t6q-uc.a.run.app/`
 
 ### Code Execution
 ```javascript
@@ -607,6 +609,66 @@ export JUDGE0_API_KEY="$(gcloud secrets versions access latest --secret=JUDGE0_A
 ### Nunca hacer:
 - Comitear claves reales en `.env`.
 - Pegar las claves en issues / PR / README.
+
+---
+
+## 🚀 Deployment Instructions
+
+### Local Development
+
+1. **Clone and setup:**
+```bash
+git clone https://github.com/camiloengineer/fluent-reflect-api.git
+cd fluent-reflect-api
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+2. **Configure environment:**
+```bash
+# Create .env file
+echo "JUDGE0_API_KEY=your_judge0_key" > .env
+echo "OPENAI_API_KEY=your_openai_key" >> .env
+```
+
+3. **Start development server:**
+```bash
+./venv/bin/python -m uvicorn app.main:app --reload --port 8000
+```
+
+### Deploy to Google Cloud Run
+
+1. **Prerequisites:**
+```bash
+# Authenticate with Google Cloud
+gcloud auth login
+gcloud config set project fr-prod-470013
+```
+
+2. **Quick deployment with secrets:**
+```bash
+# Set up secrets (first time only)
+./scripts/setup_secrets.sh fr-prod-470013 "YOUR_OPENAI_KEY" "YOUR_JUDGE0_KEY"
+
+# Deploy with automatic build and secret injection
+./scripts/quick_prod_update.sh "YOUR_OPENAI_KEY" "YOUR_JUDGE0_KEY"
+```
+
+3. **Manual deployment:**
+```bash
+# Build and deploy
+gcloud builds submit --region us-central1
+gcloud run deploy fluent-reflect-api \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --set-secrets OPENAI_API_KEY=OPENAI_API_KEY:latest,JUDGE0_API_KEY=JUDGE0_API_KEY:latest
+```
+
+4. **Verify deployment:**
+```bash
+curl https://fluent-reflect-api-581268440769.us-central1.run.app/health
+```
 
 ---
 
