@@ -47,8 +47,57 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 **OpenAI API Key:**
 1. Go to [OpenAI API Keys](https://platform.openai.com/api-keys)
-2. Create a new API key
+2. Create a new API key with GPT-5 access
 3. Copy the key (starts with `sk-`)
+
+## 🤖 AI Model Integration
+
+### GPT-5-mini Implementation
+El sistema utiliza **GPT-5-mini** a través del endpoint `/v1/responses` de OpenAI para proporcionar respuestas más avanzadas y contextualmente precisas.
+
+**Características:**
+- ✅ **Modelo**: `gpt-5-mini` con razonamiento integrado
+- ✅ **Endpoint**: `/v1/responses` (nueva API de OpenAI)
+- ✅ **Optimización**: `reasoning.effort: "minimal"` para menor costo
+- ✅ **Fallback**: Automático a GPT-4 si GPT-5-mini no está disponible
+- ✅ **Tokens**: Mínimo 200 tokens de salida para evitar respuestas truncadas
+
+### Consideraciones Importantes
+
+**⚠️ Problema de Reasoning Tokens:**
+GPT-5-mini utiliza tokens de razonamiento interno que pueden consumir parte del límite de `max_output_tokens`. Si el `effort` está configurado en `"low"`, `"medium"` o `"high"`, el modelo puede usar todos los tokens disponibles en razonamiento interno y no generar respuesta visible.
+
+**Solución Implementada:**
+```python
+payload = {
+    "model": "gpt-5-mini",
+    "reasoning": {"effort": "minimal"},  # Prioriza respuesta sobre razonamiento
+    "max_output_tokens": max(max_tokens, 200)  # Garantiza tokens suficientes
+}
+```
+
+**Para Desafíos Complejos:**
+En ejercicios de programación avanzados, se puede considerar:
+- Aumentar `reasoning.effort` a `"low"` o `"medium"`
+- Incrementar `max_output_tokens` a 400-800 tokens
+- Monitorear el campo `usage.output_tokens_details.reasoning_tokens`
+
+**Validación de API Key:**
+```bash
+# Verificar acceso a GPT-5 models
+curl -H "Authorization: Bearer $OPENAI_API_KEY" \
+  https://api.openai.com/v1/models | grep gpt-5
+```
+
+### 📊 Benchmark de Reasoning Efforts
+Hemos realizado pruebas exhaustivas de rendimiento en diferentes niveles de `reasoning.effort`. Para ver el análisis completo de tiempos, tokens y recomendaciones, consulta:
+
+**📋 [REASONING_BENCHMARK_REPORT.md](./REASONING_BENCHMARK_REPORT.md)**
+
+**Resumen ejecutivo:**
+- ✅ **`minimal`**: Óptimo para producción (0% tokens desperdiciados)
+- ⚠️ **`low`**: Solo para casos complejos con 800+ tokens
+- ❌ **`medium/high`**: Evitar (respuestas vacías, alto costo)
 
 ## 🔗 API Endpoints
 
@@ -168,7 +217,7 @@ Content-Type: application/json
 - `memory` (integer|null): Memory used in KB
 - `exit_code` (integer|null): Program exit code
 
-### 4. Chat with AI
+### 4. Chat with AI (GPT-5-mini)
 ```http
 POST /api/chat
 ```
@@ -197,11 +246,13 @@ Content-Type: application/json
 
 **Request Schema:**
 - `messages` (array, required): Array of chat messages with role and content
-- `temperature` (float, optional): Response creativity (0.0-1.0, default: 0.5)
-- `max_tokens` (integer, optional): Maximum response length (default: 400)
-- `presence_penalty` (float, optional): Penalty for new topics (default: 0)
-- `frequency_penalty` (float, optional): Penalty for repetition (default: 0.2)
-- `top_p` (float, optional): Nucleus sampling parameter (default: 0.9)
+- `temperature` (float, optional): ⚠️ **Ignorado en GPT-5-mini** - se usa configuración interna
+- `max_tokens` (integer, optional): Tokens máximos de respuesta (mínimo 200, default: 400)
+- `presence_penalty` (float, optional): ⚠️ **Ignorado en GPT-5-mini**
+- `frequency_penalty` (float, optional): ⚠️ **Ignorado en GPT-5-mini**
+- `top_p` (float, optional): ⚠️ **Ignorado en GPT-5-mini**
+
+> **Nota:** GPT-5-mini utiliza sus propios parámetros internos optimizados. Los parámetros clásicos como `temperature` son ignorados pero se mantienen por compatibilidad con frontends existentes.
 
 **Response - Success:**
 ```json
@@ -550,12 +601,35 @@ gcloud run services describe fluent-reflect-api \
 
 ## 🧪 Troubleshooting Rápido
 
+### Problemas Generales
 | Síntoma | Causa Probable | Acción |
 |---------|----------------|--------|
 | 403 a `/health` sin token | Servicio privado | Añadir header con identity token |
 | Error missing API key | Secret no inyectado | Revisar `--set-secrets` y roles secretAccessor |
 | Port not ready | CMD sin expansión de `$PORT` | Usar shell form en Docker (`/bin/sh -c ...`) |
 | Artifact Registry DENIED | IAM incompleto en `gcf-artifacts` | Añadir roles reader/writer a SAs |
+
+### Problemas GPT-5-mini Específicos
+| Síntoma | Causa Probable | Solución |
+|---------|----------------|----------|
+| Chat response vacía | Reasoning tokens consumieron todo el límite | Verificar `reasoning.effort: "minimal"` y `max_output_tokens >= 200` |
+| Error 401 Unauthorized | API key sin acceso GPT-5 | Validar con `curl -H "Authorization: Bearer $API_KEY" https://api.openai.com/v1/models` |
+| Error 400 "Unsupported parameter" | Parámetro no soportado por v1/responses | Remover `temperature`, `top_p`, etc. del payload |
+| Response status "incomplete" | Tokens insuficientes para completar | Aumentar `max_output_tokens` o reducir `reasoning.effort` |
+| Fallback automático a GPT-4 | GPT-5-mini no disponible | Normal - verificar logs para confirmar fallback exitoso |
+
+### Debug Commands
+```bash
+# Verificar modelos GPT-5 disponibles
+curl -H "Authorization: Bearer $OPENAI_API_KEY" \
+  https://api.openai.com/v1/models | jq '.data[] | select(.id | contains("gpt-5")) | .id'
+
+# Test directo GPT-5-mini
+curl -X POST https://api.openai.com/v1/responses \
+  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gpt-5-mini","input":"Test message","max_output_tokens":100,"reasoning":{"effort":"minimal"}}'
+```
 
 Logs en tiempo real:
 ```bash
@@ -567,7 +641,10 @@ gcloud logs tail --project fr-prod-470013 --region us-central1 --service fluent-
 ## 🗺️ Roadmap / Next Steps (Opcional)
 | Feature | Estado | Notas |
 |---------|--------|-------|
-| Tests unitarios básicos | Pendiente | Añadir para servicios judge0/openai |
+| Tests unitarios básicos | Pendiente | Añadir para servicios judge0/openai con GPT-5-mini |
+| Optimización reasoning effort | Considerar | Ajuste dinámico basado en complejidad del desafío |
+| Monitoreo tokens GPT-5 | Pendiente | Dashboard de reasoning vs output tokens |
+| Migration a GPT-5 completo | Futuro | Cuando esté disponible públicamente |
 | API Gateway / auth central | Evaluar | Si crece número de consumidores |
 | Rate limiting granular | Parcial | Mejorar por IP / user token |
 | Hardening IAM | En curso | Reducir roles amplios tras estabilizar |
@@ -578,6 +655,9 @@ gcloud logs tail --project fr-prod-470013 --region us-central1 --service fluent-
 | Item | Estado |
 |------|--------|
 | Despliegue Cloud Run | OK |
+| AI Model | ✅ GPT-5-mini con fallback a GPT-4 |
+| Endpoint API | ✅ `/v1/responses` optimizado |
+| Reasoning Configuration | ✅ Minimal effort para menor costo |
 | Secrets (Secret Manager) | OK, rotación via script |
 | Service Account dedicado | OK (`fluent-reflect-runtime`) |
 | Acceso público | Restringido (privado con identity token) |

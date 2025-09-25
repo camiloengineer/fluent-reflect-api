@@ -1,0 +1,66 @@
+{
+  "test_input": "SYSTEM: Eres Nemesis, un entrevistador t\u00e9cnico experto.\n\nUSER: Necesito ayuda con este problema complejo de algor\u00edtmica:\n\n\"Implementa una funci\u00f3n que encuentre el camino m\u00e1s corto en una matriz de NxM donde cada celda tiene un costo de movimiento diferente. Puedes moverte en 4 direcciones (arriba, abajo, izquierda, derecha) pero no en diagonales. El algoritmo debe ser eficiente para matrices grandes.\n\nExplica tu enfoque, implementa la soluci\u00f3n paso a paso, analiza la complejidad temporal y espacial, y proporciona ejemplos de prueba.\"\n\nProporciona una explicaci\u00f3n detallada y el c\u00f3digo completo optimizado.",
+  "test_timestamp": 1758761578.0196967,
+  "results": [
+    {
+      "effort": "minimal",
+      "status": "incomplete",
+      "response_time_seconds": 8.602,
+      "input_tokens": 137,
+      "output_tokens": 588,
+      "reasoning_tokens": 0,
+      "total_tokens": 725,
+      "response_length_chars": 2287,
+      "response_empty": false,
+      "incomplete": true,
+      "incomplete_reason": "max_output_tokens",
+      "request_id": "req_46422e746667cfb31f22857a7a3fa011",
+      "response_preview": "Perfecto \u2014 abordemos esto paso a paso como en una entrevista t\u00e9cnica. Propondr\u00e9 una soluci\u00f3n eficien..."
+    },
+    {
+      "effort": "low",
+      "status": "incomplete",
+      "response_time_seconds": 12.184,
+      "input_tokens": 137,
+      "output_tokens": 594,
+      "reasoning_tokens": 128,
+      "total_tokens": 731,
+      "response_length_chars": 1813,
+      "response_empty": false,
+      "incomplete": true,
+      "incomplete_reason": "max_output_tokens",
+      "request_id": "req_ce88768484a8f86c7af154986a3924c8",
+      "response_preview": "Perfecto \u2014 vamos a resolverlo como Nemesis, paso a paso y con profundidad t\u00e9cnica. Resumen: cuando c..."
+    },
+    {
+      "effort": "medium",
+      "status": "incomplete",
+      "response_time_seconds": 7.547,
+      "input_tokens": 137,
+      "output_tokens": 576,
+      "reasoning_tokens": 576,
+      "total_tokens": 713,
+      "response_length_chars": 0,
+      "response_empty": true,
+      "incomplete": true,
+      "incomplete_reason": "max_output_tokens",
+      "request_id": "req_9e33c1dc8a4de1b98390478f45dd7771",
+      "response_preview": ""
+    },
+    {
+      "effort": "high",
+      "status": "incomplete",
+      "response_time_seconds": 9.036,
+      "input_tokens": 137,
+      "output_tokens": 576,
+      "reasoning_tokens": 576,
+      "total_tokens": 713,
+      "response_length_chars": 0,
+      "response_empty": true,
+      "incomplete": true,
+      "incomplete_reason": "max_output_tokens",
+      "request_id": "req_657d9c4799d6abab88bc16eb195e95c6",
+      "response_preview": ""
+    }
+  ]
+}

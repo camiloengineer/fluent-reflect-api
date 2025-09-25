@@ -1,5 +1,6 @@
 import os
-from openai import OpenAI
+import requests
+import json
 from app.models.schemas import ChatMessage
 from typing import List
 from dotenv import load_dotenv
@@ -7,12 +8,16 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-def get_openai_client():
-    """Get OpenAI client with proper error handling"""
+def get_openai_headers():
+    """Get OpenAI headers with proper authentication"""
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise Exception("OPENAI_API_KEY environment variable not set")
-    return OpenAI(api_key=api_key)
+
+    return {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
 
 SYSTEM_PROMPT = """Eres Nemesis, un entrevistador de código especializado en generar ejercicios de programación. Tu misión principal es:
 
@@ -139,18 +144,83 @@ async def chat_with_openai(
         })
 
     try:
-        client = get_openai_client()
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=openai_messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            presence_penalty=presence_penalty,
-            frequency_penalty=frequency_penalty,
-            top_p=top_p
+        # Try GPT-5-mini first, fallback to standard chat endpoint if not available
+        BASE_URL = "https://api.openai.com/v1/responses"
+        headers = get_openai_headers()
+
+        # Convert messages to the proper format for gpt-5-mini
+        # Combine system and user messages into a single input string
+        input_content = ""
+
+        for msg in openai_messages:
+            if msg["role"] == "system":
+                input_content += f"SYSTEM: {msg['content']}\n\n"
+            elif msg["role"] == "user":
+                input_content += f"USER: {msg['content']}\n\n"
+            elif msg["role"] == "assistant":
+                input_content += f"ASSISTANT: {msg['content']}\n\n"
+
+        # Remove trailing newlines
+        input_content = input_content.strip()
+
+        payload = {
+            "model": "gpt-5-mini",
+            "input": input_content,
+            "max_output_tokens": max(max_tokens, 200),  # Ensure minimum tokens for response
+            "truncation": "auto",
+            "reasoning": {"effort": "minimal"}  # Minimal reasoning for faster responses
+        }
+
+        response = requests.post(
+            BASE_URL,
+            headers=headers,
+            data=json.dumps(payload),
+            timeout=60
         )
 
-        return response.choices[0].message.content
+        if response.status_code == 404 or response.status_code == 401:
+            # Fallback to standard chat/completions endpoint with gpt-4
+            fallback_url = "https://api.openai.com/v1/chat/completions"
+            fallback_payload = {
+                "model": "gpt-4",
+                "messages": openai_messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "presence_penalty": presence_penalty,
+                "frequency_penalty": frequency_penalty,
+                "top_p": top_p
+            }
 
+            response = requests.post(
+                fallback_url,
+                headers=headers,
+                data=json.dumps(fallback_payload),
+                timeout=60
+            )
+
+        response.raise_for_status()
+        data = response.json()
+
+        # Handle GPT-5 response format
+        if "output" in data:
+            texts = []
+            for item in data.get("output", []):
+                if item.get("type") == "message":
+                    for part in item.get("content", []):
+                        if part.get("type") == "output_text":
+                            texts.append(part.get("text", ""))
+
+            result_text = "\n".join(texts)
+        else:
+            # Handle standard chat/completions response format
+            result_text = data["choices"][0]["message"]["content"]
+
+        if not result_text:
+            raise Exception("No valid response text found in API response")
+
+        return result_text
+
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"HTTP request error: {str(e)}")
     except Exception as e:
-        raise Exception(f"OpenAI API error: {str(e)}")
+        raise Exception(f"API error: {str(e)}")
