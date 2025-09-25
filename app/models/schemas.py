@@ -31,24 +31,21 @@ class ChatMessage(CamelCaseModel):
     content: str = Field(alias="content")
 
 class ChatRequest(CamelCaseModel):
-    messages: List[ChatMessage] = Field(alias="messages")
-    language_id: Optional[int] = Field(default=97, alias="languageId")  # Default to JavaScript (Node.js 20 LTS)
-    exercise_active: Optional[bool] = Field(default=False, alias="exerciseActive")  # true: exercise in progress, false: no active exercise
-    current_code: Optional[str] = Field(default="", alias="currentCode")  # Current code being worked on for context
-    automatic: Optional[bool] = Field(default=False, alias="automatic")  # true: automatic prompt from frontend, false: normal user message
-    exercise_name: Optional[str] = Field(default=None, alias="exerciseName")  # Name of specific exercise to work on (for challenge generation)
-    finished: Optional[bool] = Field(default=False, alias="finished")  # true: user finished exercise, requesting verdict (ALWAYS automatic=true)
-    execution_output: Optional[str] = Field(default="", alias="executionOutput")  # Output from console.log/print (for verdict evaluation)
-    temperature: Optional[float] = Field(default=0.5, alias="temperature")
-    max_tokens: Optional[int] = Field(default=400, alias="maxTokens")
-    presence_penalty: Optional[float] = Field(default=0, alias="presencePenalty")
-    frequency_penalty: Optional[float] = Field(default=0.2, alias="frequencyPenalty")
-    top_p: Optional[float] = Field(default=0.9, alias="topP")
+    messages: Optional[List[ChatMessage]] = Field(default=None, alias="messages")  # Can be null for verdict requests
+    language_id: int = Field(default=97, alias="languageId")  # Always sent, default JavaScript
+    exercise_active: bool = Field(default=False, alias="exerciseActive")  # Always sent
+    current_code: str = Field(default="", alias="currentCode")  # Always sent, empty string if no code
+    automatic: bool = Field(default=False, alias="automatic")  # Always sent
+    exercise_name_snapshot: Optional[str] = Field(default=None, alias="exerciseNameSnapshot")  # Always sent, snapshot prioritario
+    exercise_description_snapshot: Optional[str] = Field(default=None, alias="exerciseDescriptionSnapshot")  # Always sent, snapshot en base64
+    finished: bool = Field(default=False, alias="finished")  # Always sent
+    execution_output: str = Field(default="", alias="executionOutput")  # Always sent, empty if no output
 
 class ChatResponse(CamelCaseModel):
-    response: str = Field(alias="response")
-    can_generate_exercise: bool = Field(default=False, alias="canGenerateExercise")  # true: specific exercise agreed upon, ready to generate code challenge
-    exercise_name: Optional[str] = Field(default=None, alias="exerciseName")  # name of specific exercise if one is agreed upon
+    response: str = Field(alias="response")  # Always sent
+    can_generate_exercise: bool = Field(default=False, alias="canGenerateExercise")  # Always sent
+    exercise_name: Optional[str] = Field(default=None, alias="exerciseName")  # Always sent, null if no exercise agreed
+    exercise_description: Optional[str] = Field(default=None, alias="exerciseDescription")  # Always sent, base64 encoded description
 
 class ChallengeRequest(CamelCaseModel):
     language: str = Field(default="javascript", alias="language")

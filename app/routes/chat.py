@@ -5,6 +5,7 @@ from app.services.judge0_service import get_language_name
 from app.utils.message_utils import trim_messages
 from app.utils.rate_limiter import check_rate_limit, cleanup_old_ips
 from app.utils.exercise_name_detector import should_enable_generate_code_new_logic
+from app.utils.snapshot_validator import validate_exercise_snapshots
 import random
 
 router = APIRouter()
@@ -35,6 +36,14 @@ async def chat_endpoint(request: ChatRequest, client_request: Request):
                 detail="finished=True requiere automatic=True para activar el veredicto"
             )
 
+        # Validate exercise snapshots for consistency
+        is_valid, error_message = validate_exercise_snapshots(
+            request.exercise_name_snapshot,
+            request.exercise_description_snapshot
+        )
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=error_message)
+
         # Handle automatic prompts with special logic
         if request.automatic:
             from app.services.automatic_prompts_service import detect_automatic_prompt_type, should_override_exercise_logic
@@ -51,14 +60,15 @@ async def chat_endpoint(request: ChatRequest, client_request: Request):
                 messages=trimmed_messages,
                 language_name=language_name,
                 exercise_in_progress=request.exercise_active,
-                temperature=request.temperature,
-                max_tokens=request.max_tokens,
-                presence_penalty=request.presence_penalty,
-                frequency_penalty=request.frequency_penalty,
-                top_p=request.top_p,
+                temperature=0.5,
+                max_tokens=400,
+                presence_penalty=0,
+                frequency_penalty=0.2,
+                top_p=0.9,
                 is_automatic=True,
                 current_code=request.current_code or "",
-                exercise_name=request.exercise_name or "",
+                exercise_name_snapshot=request.exercise_name_snapshot or "",
+                exercise_description_snapshot=request.exercise_description_snapshot or "",
                 execution_output=request.execution_output or "",
                 finished=request.finished
             )
@@ -77,14 +87,15 @@ async def chat_endpoint(request: ChatRequest, client_request: Request):
                 messages=trimmed_messages,
                 language_name=language_name,
                 exercise_in_progress=request.exercise_active,
-                temperature=request.temperature,
-                max_tokens=request.max_tokens,
-                presence_penalty=request.presence_penalty,
-                frequency_penalty=request.frequency_penalty,
-                top_p=request.top_p,
+                temperature=0.5,
+                max_tokens=400,
+                presence_penalty=0,
+                frequency_penalty=0.2,
+                top_p=0.9,
                 is_automatic=False,
                 current_code=request.current_code or "",
-                exercise_name=request.exercise_name or "",
+                exercise_name_snapshot=request.exercise_name_snapshot or "",
+                exercise_description_snapshot=request.exercise_description_snapshot or "",
                 execution_output=request.execution_output or "",
                 finished=request.finished
             )
@@ -97,7 +108,8 @@ async def chat_endpoint(request: ChatRequest, client_request: Request):
         return ChatResponse(
             response=response,
             can_generate_exercise=can_generate_exercise,
-            exercise_name=exercise_name
+            exercise_name=exercise_name,
+            exercise_description=None  # TODO: Implement base64 encoding when generating exercises
         )
 
     except HTTPException:

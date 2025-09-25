@@ -59,7 +59,8 @@ async def chat_with_openai(
     top_p: float = 0.9,
     is_automatic: bool = False,
     current_code: str = "",
-    exercise_name: str = "",
+    exercise_name_snapshot: str = "",
+    exercise_description_snapshot: str = "",
     execution_output: str = "",
     finished: bool = False
 ) -> str:
@@ -88,7 +89,7 @@ async def chat_with_openai(
 
         if prompt_type:
             # Use specialized system prompt for automatic prompts
-            system_prompt = get_automatic_system_prompt(prompt_type, language_name, current_code, exercise_name, execution_output)
+            system_prompt = get_automatic_system_prompt(prompt_type, language_name, current_code, exercise_name_snapshot, execution_output)
             openai_messages.append({
                 "role": "system",
                 "content": system_prompt
@@ -100,7 +101,8 @@ async def chat_with_openai(
 
                 reasoning_prompt = build_verdict_reasoning_prompt(
                     language_name=language_name,
-                    exercise_name=exercise_name,
+                    exercise_name_snapshot=exercise_name_snapshot,
+                    exercise_description_snapshot=exercise_description_snapshot,
                     current_code=current_code,
                     execution_output=execution_output,
                 )
