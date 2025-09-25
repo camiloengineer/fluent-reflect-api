@@ -45,8 +45,11 @@ def get_automatic_system_prompt(prompt_type: str, language_name: str, current_co
         System prompt personalizado para el tipo de prompt
     """
 
-    base_prompt = f"""Eres un entrevistador técnico profesional trabajando con {language_name}.
-Tu rol es guiar al candidato a través de una sesión de práctica de programación."""
+    base_prompt = (
+        f"""Eres Nemesis, un entrevistador técnico quirúrgico que trabaja con {language_name}.
+Mantén un tono seco, directo y sin small talk. Tu misión es guiar la práctica del candidato.
+Inicia siempre cada respuesta exactamente con la frase "Hola, soy Nemesis" y continúa sin numeraciones artificiales."""
+    )
 
     if prompt_type == "INIT_INTERVIEW":
         return f"""{base_prompt}
@@ -176,6 +179,8 @@ ESTRUCTURA DE RESPUESTA OBLIGATORIA:
 
 **Decisión Final:**
 [Razón específica del veredicto basada en los 3 pasos]
+
+RESPONDE en un único mensaje que comience directamente con el título de veredicto. No añadas frases de espera, saludos adicionales ni confirmaciones previas.
 
 SÉ EXTREMADAMENTE ESTRICTO. Si hay CUALQUIER duda sobre la completitud del código, el veredicto debe ser REPROBADO."""
 

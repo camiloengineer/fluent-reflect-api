@@ -6,7 +6,7 @@ Script para verificar la lógica de prompts automáticos sin llamar a OpenAI
 from app.services.automatic_prompts_service import (
     detect_automatic_prompt_type,
     get_automatic_system_prompt,
-    should_override_generate_code_logic
+    should_override_exercise_logic
 )
 
 def test_detection_logic():
@@ -34,14 +34,21 @@ def test_system_prompts():
     print("\n🧪 PROBANDO GENERACIÓN DE SYSTEM PROMPTS")
     print("=" * 60)
 
-    prompt_types = ["INIT_INTERVIEW", "HINT_REQUEST", "EXERCISE_END"]
+    prompt_types = ["INIT_INTERVIEW", "HINT_REQUEST", "EXERCISE_END", "EXERCISE_VERDICT"]
 
     for prompt_type in prompt_types:
-        prompt = get_automatic_system_prompt(prompt_type, "JavaScript", "console.log('test')")
+        prompt = get_automatic_system_prompt(
+            prompt_type,
+            "JavaScript",
+            "console.log('test')",
+            exercise_name="FizzBuzz",
+            execution_output="1 2 Fizz"
+        )
         print(f"\n📝 {prompt_type}:")
         print(f"   Longitud: {len(prompt)} caracteres")
-        print(f"   Contiene 'JavaScript': {'✅' if 'JavaScript' in prompt else '❌'}")
-        print(f"   Contiene tipo específico: {'✅' if prompt_type.lower().replace('_', ' ') in prompt.lower() else '❌'}")
+        print(f"   Contiene 'Nemesis': {'✅' if 'Nemesis' in prompt else '❌'}")
+        assert "Nemesis" in prompt
+        assert "small talk" in prompt.lower()
 
 def test_override_logic():
     """Prueba la lógica de sobrescritura de flags"""
@@ -49,16 +56,14 @@ def test_override_logic():
     print("\n🧪 PROBANDO LÓGICA DE SOBRESCRITURA DE FLAGS")
     print("=" * 60)
 
-    test_cases = [
-        ("INIT_INTERVIEW", (True, None)),
-        ("HINT_REQUEST", (True, "Exercise in Progress")),
-        ("EXERCISE_END", (True, None)),
-    ]
+    expected = (False, None)
+    test_cases = ["INIT_INTERVIEW", "HINT_REQUEST", "EXERCISE_END", "EXERCISE_VERDICT"]
 
-    for prompt_type, expected in test_cases:
-        result = should_override_generate_code_logic(prompt_type)
+    for prompt_type in test_cases:
+        result = should_override_exercise_logic(prompt_type)
         status = "✅" if result == expected else "❌"
         print(f"{status} {prompt_type} -> {result} (esperado: {expected})")
+        assert result == expected
 
 def test_edge_cases():
     """Prueba casos extremos"""

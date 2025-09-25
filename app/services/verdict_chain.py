@@ -33,14 +33,15 @@ def build_verdict_reasoning_prompt(
         3. **Consistencia enunciado-código**: Extrae la intención del ejercicio "{exercise_name}" y verifica que la firma, los nombres de funciones y la lógica implementada coincidan con el enunciado.
         4. **Desglose de lógica**: Descompón la implementación en pasos lógicos (mínimo 5 checkpoints conceptuales, incluso si el algoritmo es corto). Evalúa cada checkpoint contra los requisitos.
         5. **Cobertura de casos complejos**: Analiza ramificaciones, bucles y estructura temporal. Si detectas estrategias ineficientes (ej. doble loop para un problema que requiere O(n)), anótalo y marca riesgo de REPROBADO.
-        6. **Pruebas mentales**: Ejecuta pruebas rápidas con datos concretos extraídos del enunciado. Ejemplos: sum(2,3) === 5. Ajusta al problema actual.
+        6. **Pruebas mentales**: Ejecuta pruebas rápidas con datos concretos extraídos del enunciado. Ejemplos: sum(2,3) === 5. Ajusta al problema actual. Si la lógica pasa estas pruebas y la salida coincide con los resultados esperados (aunque sea un único valor), considéralo evidencia suficiente.
         7. **Síntesis final**: Decide el veredicto únicamente si todos los pasos anteriores son coherentes. Ante la mínima duda, REPROBADO.
 
         #### REGLAS ADICIONALES
         - Nunca inventes resultados que el código no puede producir.
         - Si el output fue manipulado o no coincide con la lógica, debes detectarlo y reprobar.
-        - Si "finished" es True, asume que el usuario cerró el ejercicio y espera dictamen definitivo.
+        - Si "finished" es True, asume que el usuario cerró el ejercicio y espera dictamen definitivo en este mismo mensaje.
         - Prioriza precisión sobre indulgencia: dudas ⇒ REPROBADO.
+        - No agregues mensajes de espera ni confirmaciones previas; emite el veredicto directamente con el formato indicado.
 
         #### CASOS AUTOMÁTICOS DE REPROBACIÓN
         - Plantilla o funciones vacías.

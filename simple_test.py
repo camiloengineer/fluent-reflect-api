@@ -29,10 +29,10 @@ def test_basic_endpoint():
         print(f"Status: {response.status_code}")
         if response.status_code != 200:
             print(f"Error response: {response.text}")
-        return response.status_code == 200
+        assert response.status_code == 200
     except Exception as e:
         print(f"Error: {e}")
-        return False
+        assert False, f"Exception occurred: {e}"
 
 def test_automatic_init():
     """Prueba el prompt automático de inicio"""
@@ -58,10 +58,10 @@ def test_automatic_init():
         else:
             result = response.json()
             print(f"Response: {result.get('response', '')[:100]}...")
-        return response.status_code == 200
+        assert response.status_code == 200
     except Exception as e:
         print(f"Error: {e}")
-        return False
+        assert False, f"Exception occurred: {e}"
 
 if __name__ == "__main__":
     print("🚀 Iniciando pruebas...")
@@ -75,13 +75,15 @@ if __name__ == "__main__":
         exit(1)
 
     # Probar endpoint básico
-    if test_basic_endpoint():
+    try:
+        test_basic_endpoint()
         print("✅ Endpoint básico funciona")
-    else:
+    except AssertionError:
         print("❌ Endpoint básico falló")
 
     # Probar automatic prompt
-    if test_automatic_init():
+    try:
+        test_automatic_init()
         print("✅ Prompt automático funciona")
-    else:
+    except AssertionError:
         print("❌ Prompt automático falló")

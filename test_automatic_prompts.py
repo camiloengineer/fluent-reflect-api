@@ -9,7 +9,7 @@ import json
 # Configuración del servidor
 BASE_URL = "http://localhost:8000/api"
 
-def test_automatic_prompt(prompt_type: str, content: str, current_code: str = "", generar_codigo: bool = False):
+def run_automatic_prompt(prompt_type: str, content: str, current_code: str = "", generar_codigo: bool = False):
     """Prueba un tipo específico de prompt automático"""
 
     payload = {
@@ -62,7 +62,7 @@ def main():
     print("=" * 60)
 
     # Prueba 1: Inicio de entrevista
-    test_automatic_prompt(
+    run_automatic_prompt(
         "INIT_INTERVIEW",
         "INIT_INTERVIEW: Preséntate como entrevistador técnico y ofrece desafíos de programación disponibles en este lenguaje.",
         "",
@@ -70,7 +70,7 @@ def main():
     )
 
     # Prueba 2: Solicitud de pista
-    test_automatic_prompt(
+    run_automatic_prompt(
         "HINT_REQUEST",
         "HINT_REQUEST: El usuario necesita una pista sobre el código actual. Analiza el código y da una pista específica pero no la solución completa.",
         """function findMax(arr) {
@@ -82,7 +82,7 @@ def main():
     )
 
     # Prueba 3: Finalización de ejercicio
-    test_automatic_prompt(
+    run_automatic_prompt(
         "EXERCISE_END",
         "EXERCISE_END: El ejercicio ha terminado (tiempo agotado o usuario se rindió). Proporciona feedback sobre lo que faltó, da las gracias y menciona que solo es posible generar un nuevo desafío.",
         """function findMax(arr) {
