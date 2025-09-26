@@ -304,5 +304,32 @@ Cuando `currentCode` está presente, el asistente:
 5. **Prompts Automáticos**: Son transparentes al usuario, solo el frontend los maneja
 6. **📝 Contexto de Código**: El asistente siempre analiza el `current_code` cuando está disponible
 
+## 🔧 VARIABLES DE ENTORNO
+
+### 📋 CONFIGURACIÓN REQUERIDA
+```bash
+# API Keys para servicios externos
+JUDGE0_API_KEY=your_judge0_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
+
+# CORS origins (comma-separated)
+ALLOWED_ORIGINS=https://fluent-reflect-front-d5vnsr2t6q-uc.a.run.app,http://localhost:666
+```
+
+### 🔐 MANEJO DE SECRETOS
+
+**IMPORTANTE**: En producción, las API keys se almacenan en Google Secret Manager y se inyectan automáticamente en tiempo de deploy. El archivo `.env` es solo para desarrollo local.
+
+**Para desarrollo local**, las keys reales se cargan usando gcloud:
+```bash
+export JUDGE0_API_KEY="$(gcloud secrets versions access latest --secret=JUDGE0_API_KEY --project fr-prod-470013)"
+export OPENAI_API_KEY="$(gcloud secrets versions access latest --secret=OPENAI_API_KEY --project fr-prod-470013)"
+```
+
+### 🎯 CORS CONFIGURATION
+- **Producción**: `https://fluent-reflect-front-d5vnsr2t6q-uc.a.run.app`
+- **Desarrollo local**: `http://localhost:666`
+- Se pueden agregar múltiples origins separados por comas
+
 ---
 *Generado por Claude Code - Especificación completa del backend stateless*

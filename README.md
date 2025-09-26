@@ -601,9 +601,12 @@ Este script automatiza todo el proceso de rotación de claves:
 Script más básico que solo gestiona secretos sin deployment.
 
 ### Cargar secretos localmente (solo para desarrollo):
+
+**Para desarrollo local**, las keys reales se cargan usando gcloud (ver instrucciones en CLAUDE.md):
 ```bash
-export OPENAI_API_KEY="$(gcloud secrets versions access latest --secret=OPENAI_API_KEY --project fr-prod-470013)"
+# To load locally (example):
 export JUDGE0_API_KEY="$(gcloud secrets versions access latest --secret=JUDGE0_API_KEY --project fr-prod-470013)"
+export OPENAI_API_KEY="$(gcloud secrets versions access latest --secret=OPENAI_API_KEY --project fr-prod-470013)"
 ```
 
 ### Nunca hacer:

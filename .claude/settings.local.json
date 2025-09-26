@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./venv/bin/python:*)",
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(curl:*)",
+      "Bash(bash)",
+      "Bash(export PATH=$PATH:$HOME/google-cloud-sdk/bin)",
+      "Bash(gcloud:*)",
+      "Bash(source:*)",
+      "Bash(~/google-cloud-sdk/bin/gcloud --version)",
+      "Bash(~/google-cloud-sdk/bin/gcloud secrets create ALLOWED_ORIGINS --data-file=- --project=fr-prod-470013)",
+      "Bash(~/google-cloud-sdk/bin/gcloud auth login)",
+      "Bash(~/google-cloud-sdk/bin/gcloud config set project fr-prod-470013)",
+      "Bash(~/google-cloud-sdk/bin/gcloud secrets add-iam-policy-binding ALLOWED_ORIGINS --member=\"serviceAccount:fluent-reflect-runtime@fr-prod-470013.iam.gserviceaccount.com\" --role=\"roles/secretmanager.secretAccessor\" --project=fr-prod-470013)",
+      "Bash(~/google-cloud-sdk/bin/gcloud run services update fluent-reflect-api --project=fr-prod-470013 --region=us-central1 --set-secrets=OPENAI_API_KEY=OPENAI_API_KEY:latest,JUDGE0_API_KEY=JUDGE0_API_KEY:latest,ALLOWED_ORIGINS=ALLOWED_ORIGINS:latest)",
+      "Bash(python3:*)",
+      "Bash(pip3 install:*)",
+      "Bash(pkill:*)",
+      "Bash(lsof:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
